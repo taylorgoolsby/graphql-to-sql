@@ -1,5 +1,10 @@
 # graphql-to-sql
 
+## Deprecated in favor of [`graphql-directive-sql`](https://www.npmjs.com/package/graphql-directive-sql)
+
+Please use [graphql-directive-sql](https://www.npmjs.com/package/graphql-directive-sql) instead.
+___
+
 Unify your SQL schema and your GraphQL Schema. Use GraphQL SDL as the lingua franca to define your data requirements.
 
 Given a GraphQL schema defined in SDL, this function will output a schema script which, when ran on your database, will create all the tables in your database.
