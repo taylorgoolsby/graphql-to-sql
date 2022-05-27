@@ -54,7 +54,7 @@
     "sql-schema"
   ],
   "dependencies": {
-    "fs-extra": "^7.0.0"
+    "fs-extra": "^8.0.0"
   },
   "husky": {
     "hooks": {
