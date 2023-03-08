@@ -1,0 +1,65 @@
+{
+  "name": "graphql-to-sql",
+  "version": "1.3.0",
+  "description": "Use GraphQL as the source of truth for schema. The SQL schema script is derived from the GraphQL type definitions.",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "format": "./node_modules/.bin/prettier --write 'src/**/*.{ts,tsx,js,jsx}'",
+    "lint": "./node_modules/.bin/tslint --fix 'src/**/*.{ts,tsx}'",
+    "test": "jest __tests__/postgres-test.ts",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run test",
+    "version": "git add -A src",
+    "postversion": "git push && git push --tags"
+  },
+  "repository": "git@github.com:grainstackdev/graphql-to-sql.git",
+  "license": "GPL-3.0",
+  "engines": {
+    "node": ">=8.11.4"
+  },
+  "peerDependencies": {
+    "graphql": "^0.13.0 || ^14.0.0",
+    "graphql-tools": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^5.0.4",
+    "@types/graphql": "^14.0.2",
+    "@types/jest": "^23.3.3",
+    "@types/node": "^10.12.1",
+    "graphql": "^14.0.2",
+    "graphql-tag": "^2.10.1",
+    "graphql-tools": "^4.0.0",
+    "husky": "^1.1.1",
+    "jest": "^25.1.0",
+    "lint-staged": "^7.3.0",
+    "prettier": "^1.14.3",
+    "ts-jest": "^25.2.0",
+    "tslint": "^6.0.0",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^3.7.5"
+  },
+  "keywords": [
+    "graphql",
+    "directive",
+    "mysql",
+    "sql",
+    "database",
+    "code-generation",
+    "generator",
+    "sdl",
+    "graphql-schema-language",
+    "graphql-schema",
+    "schema",
+    "sql-schema"
+  ],
+  "dependencies": {
+    "fs-extra": "^7.0.0"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  }
+}

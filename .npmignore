@@ -1,0 +1,11 @@
+.idea/
+.vscode/
+__tests__/
+src/
+.lintstagedrc
+.nvmrc
+.prettierrc
+jest.config.js
+tsconfig.json
+tslint.json
+yarn.lock
