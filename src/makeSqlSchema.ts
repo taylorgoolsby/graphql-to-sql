@@ -292,7 +292,9 @@ function renderCreateSchemaScript(
     }
   })
 
-  fs.outputFileSync(`${outputFilepath}`, tableDefinitions.join('\n\n'))
+  const render = `CREATE SCHEMA IF NOT EXISTS ${databaseName};\n\n` + tableDefinitions.join('\n\n')
+
+  fs.outputFileSync(`${outputFilepath}`, render)
 }
 
 function forEachTableDo(foo: (table: ITable) => void): void {
