@@ -292,7 +292,11 @@ function renderCreateSchemaScript(
     }
   })
 
-  const render = `CREATE SCHEMA IF NOT EXISTS ${databaseName};\n\n` + tableDefinitions.join('\n\n')
+  let render = `CREATE SCHEMA IF NOT EXISTS ${databaseName};\n\n` + tableDefinitions.join('\n\n')
+
+  if (dbType === 'postgres') {
+    render = render.replace(/`/g, '')
+  }
 
   fs.outputFileSync(`${outputFilepath}`, render)
 }
