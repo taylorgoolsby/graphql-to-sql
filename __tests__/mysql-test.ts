@@ -57,20 +57,20 @@ test('main test', () => {
     typeDefs,
     schemaDirectives: directives,
     outputFilepath,
-    databaseName: 'dbname',
+    schemaName: 'public',
     tablePrefix: 'test_',
   })
 
   const testOutput = fs.readFileSync(outputFilepath, { encoding: 'utf8' })
   expect(testOutput).toEqual(
-    `CREATE TABLE \`dbname\`.\`test_User\` (
+    `CREATE TABLE \`public\`.\`test_User\` (
   \`userId\` BINARY(16) NOT NULL,
   \`uniqueColumn\` INT NOT NULL UNIQUE,
   \`databaseOnlyField\` INT NOT NULL,
   PRIMARY KEY (\`userId\`)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE \`dbname\`.\`test_Post\` (
+CREATE TABLE \`public\`.\`test_Post\` (
   \`postId\` INT NOT NULL AUTO_INCREMENT,
   \`userId\` BINARY(16) NOT NULL,
   \`content\` VARCHAR(300) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
@@ -80,7 +80,7 @@ CREATE TABLE \`dbname\`.\`test_Post\` (
   INDEX \`USERIDINDEX\` (\`userId\` ASC)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE \`dbname\`.\`test_UserPair\` (
+CREATE TABLE \`public\`.\`test_UserPair\` (
   \`userPairId\` BINARY(16) NOT NULL,
   \`parentUserId\` BINARY(16) NOT NULL,
   \`childUserId\` BINARY(16) NOT NULL,
@@ -108,7 +108,7 @@ test('error no primary index', () => {
       typeDefs,
       schemaDirectives: directives,
       outputFilepath: '',
-      databaseName: 'dbname',
+      schemaName: 'public',
     })
   }).toThrow()
 })
@@ -129,7 +129,7 @@ test('error multiple primary index', () => {
       typeDefs,
       schemaDirectives: directives,
       outputFilepath: '',
-      databaseName: 'dbname',
+      schemaName: 'public',
     })
   }).toThrow()
 })
@@ -162,13 +162,13 @@ test('generated', () => {
     typeDefs,
     schemaDirectives: directives,
     outputFilepath,
-    databaseName: 'dbname',
+    schemaName: 'public',
     tablePrefix: 'test_',
   })
 
   const testOutput = fs.readFileSync(outputFilepath, { encoding: 'utf8' })
   console.log('testOutput', testOutput)
-  expect(testOutput).toEqual(`CREATE TABLE \`dbname\`.\`test_GeneratedTest\` (
+  expect(testOutput).toEqual(`CREATE TABLE \`public\`.\`test_GeneratedTest\` (
   \`userId\` BINARY(16) NOT NULL,
   \`data\` JSON NOT NULL,
   \`test1\` VARCHAR(30) GENERATED ALWAYS AS (data->>'$.test') VIRTUAL NOT NULL,

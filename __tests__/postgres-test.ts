@@ -57,40 +57,42 @@ test('main test', () => {
     typeDefs,
     schemaDirectives: directives,
     outputFilepath,
-    databaseName: 'dbname',
+    schemaName: 'public',
     tablePrefix: 'test_',
     dbType: 'postgres',
   })
 
   const testOutput = fs.readFileSync(outputFilepath, { encoding: 'utf8' })
   expect(testOutput).toEqual(
-    `CREATE TABLE \`dbname\`.\`test_User\` (
-  \`userId\` BINARY(16) NOT NULL,
-  \`uniqueColumn\` INT NOT NULL UNIQUE,
-  \`databaseOnlyField\` INT NOT NULL,
-  PRIMARY KEY (\`userId\`)
+    `CREATE SCHEMA IF NOT EXISTS public;
+
+CREATE TABLE public.test_User (
+  userId BINARY(16) NOT NULL,
+  uniqueColumn INT NOT NULL UNIQUE,
+  databaseOnlyField INT NOT NULL,
+  PRIMARY KEY (userId)
 );
 
-CREATE TABLE \`dbname\`.\`test_Post\` (
-  \`postId\` INT NOT NULL AUTO_INCREMENT,
-  \`userId\` BINARY(16) NOT NULL,
-  \`content\` VARCHAR(300) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
-  \`likes\` INT NOT NULL,
-  \`dateCreated\` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (\`postId\`)
+CREATE TABLE public.test_Post (
+  postId INT NOT NULL AUTO_INCREMENT,
+  userId BINARY(16) NOT NULL,
+  content VARCHAR(300) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
+  likes INT NOT NULL,
+  dateCreated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (postId)
 );
-CREATE INDEX \`USERIDINDEX\` ON \`dbname\`.\`test_Post\` (\`userId\` ASC);
+CREATE INDEX USERIDINDEX ON public.test_Post (userId ASC);
 
-CREATE TABLE \`dbname\`.\`test_UserPair\` (
-  \`userPairId\` BINARY(16) NOT NULL,
-  \`parentUserId\` BINARY(16) NOT NULL,
-  \`childUserId\` BINARY(16) NOT NULL,
-  PRIMARY KEY (\`userPairId\`),
+CREATE TABLE public.test_UserPair (
+  userPairId BINARY(16) NOT NULL,
+  parentUserId BINARY(16) NOT NULL,
+  childUserId BINARY(16) NOT NULL,
+  PRIMARY KEY (userPairId),
   UNIQUE(parentUserId, childUserId),
   FOREIGN KEY (parentUserId) REFERENCES User(userId)
 );
-CREATE INDEX \`PARENTUSERIDINDEX\` ON \`dbname\`.\`test_UserPair\` (\`parentUserId\` ASC);
-CREATE INDEX \`CHILDUSERIDINDEX\` ON \`dbname\`.\`test_UserPair\` (\`childUserId\` ASC);`
+CREATE INDEX PARENTUSERIDINDEX ON public.test_UserPair (parentUserId ASC);
+CREATE INDEX CHILDUSERIDINDEX ON public.test_UserPair (childUserId ASC);`
   )
 })
 
@@ -109,7 +111,7 @@ test('error no primary index', () => {
       typeDefs,
       schemaDirectives: directives,
       outputFilepath: '',
-      databaseName: 'dbname',
+      schemaName: 'public',
       dbType: 'postgres',
     })
   }).toThrow()
@@ -131,7 +133,7 @@ test('error multiple primary index', () => {
       typeDefs,
       schemaDirectives: directives,
       outputFilepath: '',
-      databaseName: 'dbname',
+      schemaName: 'public',
       dbType: 'postgres',
     })
   }).toThrow()
@@ -165,21 +167,23 @@ test('generated', () => {
     typeDefs,
     schemaDirectives: directives,
     outputFilepath,
-    databaseName: 'dbname',
+    schemaName: 'public',
     tablePrefix: 'test_',
     dbType: 'postgres',
   })
 
   const testOutput = fs.readFileSync(outputFilepath, { encoding: 'utf8' })
   console.log('testOutput', testOutput)
-  expect(testOutput).toEqual(`CREATE TABLE \`dbname\`.\`test_GeneratedTest\` (
-  \`userId\` BINARY(16) NOT NULL,
-  \`data\` JSON NOT NULL,
-  \`test1\` VARCHAR(30) GENERATED ALWAYS AS (data->>'$.test') VIRTUAL NOT NULL,
-  \`test2\` VARCHAR(30) GENERATED ALWAYS AS (data->>'$.test') NOT NULL,
-  \`test3\` VARCHAR(30) AS (data->>'$.test') NOT NULL,
-  \`test4\` VARCHAR(30) AS (data->>'$.test') NOT NULL,
-  PRIMARY KEY (\`userId\`)
+  expect(testOutput).toEqual(`CREATE SCHEMA IF NOT EXISTS public;
+
+CREATE TABLE public.test_GeneratedTest (
+  userId BINARY(16) NOT NULL,
+  data JSON NOT NULL,
+  test1 VARCHAR(30) GENERATED ALWAYS AS (data->>'$.test') VIRTUAL NOT NULL,
+  test2 VARCHAR(30) GENERATED ALWAYS AS (data->>'$.test') NOT NULL,
+  test3 VARCHAR(30) AS (data->>'$.test') NOT NULL,
+  test4 VARCHAR(30) AS (data->>'$.test') NOT NULL,
+  PRIMARY KEY (userId)
 );
-CREATE INDEX \`TEST4INDEX\` ON \`dbname\`.\`test_GeneratedTest\` (\`test4\` ASC);`)
+CREATE INDEX TEST4INDEX ON public.test_GeneratedTest (test4 ASC);`)
 })

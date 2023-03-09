@@ -21,7 +21,7 @@ export interface IMakeSqlSchemaInput extends IExecutableSchemaDefinition {
     [name: string]: typeof SchemaDirectiveVisitor
   }
   outputFilepath: string
-  databaseName: string
+  schemaName: string
   tablePrefix?: string
   dbType?: 'mysql' | 'postgres'
 }
@@ -72,10 +72,10 @@ export function addColumn(tableName: string, column: IColumn): void {
 export function makeSqlSchema(options: IMakeSqlSchemaInput): void {
   sqlAST = {}
   const outputFilepath = options.outputFilepath
-  const databaseName = options.databaseName
+  const databaseName = options.schemaName
   const tablePrefix = options.tablePrefix || ''
   delete options.outputFilepath
-  delete options.databaseName
+  delete options.schemaName
   makeExecutableSchema(options)
   setDefaults()
   gatherIndices()
