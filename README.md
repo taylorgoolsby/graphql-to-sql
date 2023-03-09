@@ -61,9 +61,9 @@ makeSqlSchema({
   typeDefs,
   schemaDirectives: directives,
   outputFilepath,
-  schemaName: 'public',
+  schemaName: 'public', // for postgres, keeping public is recommended.
   tablePrefix: 'test_',
-  dbType: 'mysql' // 'postgres'
+  dbType: 'postgres' // 'mysql'
 })
 ```
 The script above will produce this file:
