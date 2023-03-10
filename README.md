@@ -1,4 +1,4 @@
-# graphql-directive-sql
+# graphql-to-sql
 
 Unify your SQL schema and your GraphQL Schema. Use GraphQL SDL as the lingua franca to define your data requirements.
 
