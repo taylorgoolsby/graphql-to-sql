@@ -1,8 +1,6 @@
 # graphql-to-sql
 
-Unify your SQL schema and your GraphQL Schema. Use GraphQL SDL as the lingua franca to define your data requirements.
-
-Given a GraphQL schema defined in SDL, this function will output a schema script which, when ran on your database, will create all the tables in your database.
+Unify your SQL schema and your GraphQL schema. Manage schema from a single source of truth.
 
 ## Example
 
