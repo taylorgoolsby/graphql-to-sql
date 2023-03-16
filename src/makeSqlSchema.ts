@@ -69,7 +69,7 @@ export function addColumn(tableName: string, column: IColumn): void {
   }
 }
 
-export function makeSqlSchema(options: IMakeSqlSchemaInput): void {
+export function makeSqlSchema(options: IMakeSqlSchemaInput): string {
   sqlAST = {}
   const outputFilepath = options.outputFilepath
   const databaseName = options.schemaName
@@ -79,7 +79,7 @@ export function makeSqlSchema(options: IMakeSqlSchemaInput): void {
   makeExecutableSchema(options)
   setDefaults()
   gatherIndices()
-  renderCreateSchemaScript(
+  return renderCreateSchemaScript(
     options.dbType || 'mysql',
     databaseName,
     tablePrefix,
@@ -226,7 +226,7 @@ function renderCreateSchemaScript(
   databaseName: string,
   tablePrefix: string,
   outputFilepath: string
-): void {
+): string {
   // console.log('Creating script from:', JSON.stringify(sqlAST, null, '  '))
 
   const tableDefinitions: string[] = []
@@ -299,6 +299,7 @@ function renderCreateSchemaScript(
   }
 
   fs.outputFileSync(`${outputFilepath}`, render)
+  return render
 }
 
 function forEachTableDo(foo: (table: ITable) => void): void {
