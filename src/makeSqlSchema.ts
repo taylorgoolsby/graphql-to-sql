@@ -298,7 +298,9 @@ function renderCreateSchemaScript(
     render = render.replace(/`/g, '')
   }
 
-  fs.outputFileSync(`${outputFilepath}`, render)
+  if (outputFilepath) {
+    fs.outputFileSync(outputFilepath, render)
+  }
   return render
 }
 

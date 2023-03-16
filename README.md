@@ -58,7 +58,7 @@ const directives = getSchemaDirectives()
 const out = makeSqlSchema({
   typeDefs,
   schemaDirectives: directives,
-  outputFilepath, // writes to file and also has return value.
+  outputFilepath, // if specified, writes to file.
   schemaName: 'public', // for postgres, keeping public is recommended.
   tablePrefix: 'test_',
   dbType: 'postgres' // 'mysql'
