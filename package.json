@@ -8,7 +8,7 @@
     "build": "tsc",
     "format": "./node_modules/.bin/prettier --write 'src/**/*.{ts,tsx,js,jsx}'",
     "lint": "./node_modules/.bin/tslint --fix 'src/**/*.{ts,tsx}'",
-    "test": "jest __tests__/postgres-test.ts",
+    "test": "jest",
     "prepare": "npm run build",
     "prepublishOnly": "npm run test",
     "version": "git add -A src",

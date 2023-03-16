@@ -63,7 +63,9 @@ test('main test', () => {
 
   const testOutput = fs.readFileSync(outputFilepath, { encoding: 'utf8' })
   expect(testOutput).toEqual(
-    `CREATE TABLE \`public\`.\`test_User\` (
+    `CREATE SCHEMA IF NOT EXISTS public;
+
+CREATE TABLE \`public\`.\`test_User\` (
   \`userId\` BINARY(16) NOT NULL,
   \`uniqueColumn\` INT NOT NULL UNIQUE,
   \`databaseOnlyField\` INT NOT NULL,
@@ -113,27 +115,6 @@ test('error no primary index', () => {
   }).toThrow()
 })
 
-test('error multiple primary index', () => {
-  const typeDefs = `
-    ${sqlDirectiveDeclaration}
-  
-    type User @sql(unicode: true) {
-      userId: String @sql(type: "BINARY(16)", primary: true)
-      postId: String @sql(type: "BINARY(16)", primary: true)
-    }
-  `
-
-  const directives = getSchemaDirectives()
-  expect(() => {
-    makeSqlSchema({
-      typeDefs,
-      schemaDirectives: directives,
-      outputFilepath: '',
-      schemaName: 'public',
-    })
-  }).toThrow()
-})
-
 test('generated', () => {
   const typeDefs = gql`
     ${sqlDirectiveDeclaration}
@@ -167,8 +148,9 @@ test('generated', () => {
   })
 
   const testOutput = fs.readFileSync(outputFilepath, { encoding: 'utf8' })
-  console.log('testOutput', testOutput)
-  expect(testOutput).toEqual(`CREATE TABLE \`public\`.\`test_GeneratedTest\` (
+  expect(testOutput).toEqual(`CREATE SCHEMA IF NOT EXISTS public;
+
+CREATE TABLE \`public\`.\`test_GeneratedTest\` (
   \`userId\` BINARY(16) NOT NULL,
   \`data\` JSON NOT NULL,
   \`test1\` VARCHAR(30) GENERATED ALWAYS AS (data->>'$.test') VIRTUAL NOT NULL,
@@ -177,5 +159,32 @@ test('generated', () => {
   \`test4\` VARCHAR(30) AS (data->>'$.test') NOT NULL,
   PRIMARY KEY (\`userId\`),
   INDEX \`TEST4INDEX\` (\`test4\` ASC)
+);`)
+})
+
+test('multi-column primary key', () => {
+  const typeDefs = gql`
+    ${sqlDirectiveDeclaration}
+
+    type Version {
+      version: String @sql(type: "VARCHAR(100)", primary: true)
+      runtimeEnv: String @sql(type: "VARCHAR(100)", primary: true)
+    }
+  `
+
+  const directives = getSchemaDirectives()
+  const out = makeSqlSchema({
+    typeDefs,
+    schemaDirectives: directives,
+    schemaName: 'public',
+    tablePrefix: 'test_',
+  })
+
+  expect(out).toEqual(`CREATE SCHEMA IF NOT EXISTS public;
+
+CREATE TABLE \`public\`.\`test_Version\` (
+  \`version\` VARCHAR(100) NOT NULL,
+  \`runtimeEnv\` VARCHAR(100) NOT NULL,
+  PRIMARY KEY (\`version, runtimeEnv\`)
 );`)
 })

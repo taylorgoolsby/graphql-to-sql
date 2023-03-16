@@ -20,7 +20,7 @@ export interface IMakeSqlSchemaInput extends IExecutableSchemaDefinition {
   schemaDirectives: {
     [name: string]: typeof SchemaDirectiveVisitor
   }
-  outputFilepath: string
+  outputFilepath?: string
   schemaName: string
   tablePrefix?: string
   dbType?: 'mysql' | 'postgres'
@@ -29,7 +29,7 @@ export interface IMakeSqlSchemaInput extends IExecutableSchemaDefinition {
 export interface ITable {
   name: string
   columns: { [name: string]: IColumn }
-  primaryIndex?: IColumn
+  primaryIndices?: IColumn[]
   secondaryIndices?: IColumn[]
   unicode?: boolean
   constraints?: string
@@ -197,21 +197,14 @@ function gatherIndices() {
   forEachTableDo(table => {
     forEachColumnDo(table, column => {
       if (column.primary) {
-        if (!!table.primaryIndex) {
-          emitError(
-            table.name,
-            column.name,
-            'More than one column is marked as the primary index.'
-          )
-        } else {
-          table.primaryIndex = column
-        }
+        table.primaryIndices = table.primaryIndices || []
+        table.primaryIndices.push(column)
       } else if (column.index) {
         table.secondaryIndices = table.secondaryIndices || []
         table.secondaryIndices.push(column)
       }
     })
-    if (!table.primaryIndex) {
+    if (!table.primaryIndices || table.primaryIndices?.length === 0) {
       emitError(
         table.name,
         '',
@@ -225,7 +218,7 @@ function renderCreateSchemaScript(
   dbType: string,
   databaseName: string,
   tablePrefix: string,
-  outputFilepath: string
+  outputFilepath?: string
 ): string {
   // console.log('Creating script from:', JSON.stringify(sqlAST, null, '  '))
 
@@ -247,7 +240,8 @@ function renderCreateSchemaScript(
       )
     })
 
-    const primaryKeyName = (table.primaryIndex && table.primaryIndex.name) || ''
+    // const primaryKeyName = (table.primaryIndices && table.primaryIndices[0].name) || ''
+    const primaryKeyName = table.primaryIndices && table.primaryIndices.length ? table.primaryIndices.map(column => column.name).join(', ') : ''
 
     let indexDefinitions =
       dbType === 'mysql'
