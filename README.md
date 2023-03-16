@@ -55,10 +55,10 @@ const typeDefs = gql`
 
 const outputFilepath = 'schemaScript.sql'
 const directives = getSchemaDirectives()
-makeSqlSchema({
+const out = makeSqlSchema({
   typeDefs,
   schemaDirectives: directives,
-  outputFilepath,
+  outputFilepath, // writes to file and also has return value.
   schemaName: 'public', // for postgres, keeping public is recommended.
   tablePrefix: 'test_',
   dbType: 'postgres' // 'mysql'
