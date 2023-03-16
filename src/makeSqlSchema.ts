@@ -240,8 +240,9 @@ function renderCreateSchemaScript(
       )
     })
 
-    // const primaryKeyName = (table.primaryIndices && table.primaryIndices[0].name) || ''
-    const primaryKeyName = table.primaryIndices && table.primaryIndices.length ? table.primaryIndices.map(column => column.name).join(', ') : ''
+    // const primaryKeyNames = (table.primaryIndices && table.primaryIndices[0].name) || ''
+    const primaryKeyNames = table.primaryIndices && table.primaryIndices.length ?
+      table.primaryIndices.map(column => `\`${column.name}\``).join(', ') : ''
 
     let indexDefinitions =
       dbType === 'mysql'
@@ -271,7 +272,7 @@ function renderCreateSchemaScript(
       tableDefinitions.push(
         `CREATE TABLE \`${databaseName}\`.\`${tablePrefix}${table.name}\` (
   ${columnDefinitions.join(',\n  ')},
-  PRIMARY KEY (\`${primaryKeyName}\`)${indexDefinitions.join(
+  PRIMARY KEY (${primaryKeyNames})${indexDefinitions.join(
           ',\n  '
         )}${constraints}
 )${unicodeModifier};`
@@ -280,7 +281,7 @@ function renderCreateSchemaScript(
       tableDefinitions.push(
         `CREATE TABLE \`${databaseName}\`.\`${tablePrefix}${table.name}\` (
   ${columnDefinitions.join(',\n  ')},
-  PRIMARY KEY (\`${primaryKeyName}\`)${constraints}
+  PRIMARY KEY (${primaryKeyNames})${constraints}
 )${indexDefinitions.join(';\n')};`
       )
     }

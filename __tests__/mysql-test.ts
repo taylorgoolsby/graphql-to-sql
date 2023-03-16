@@ -185,6 +185,6 @@ test('multi-column primary key', () => {
 CREATE TABLE \`public\`.\`test_Version\` (
   \`version\` VARCHAR(100) NOT NULL,
   \`runtimeEnv\` VARCHAR(100) NOT NULL,
-  PRIMARY KEY (\`version, runtimeEnv\`)
+  PRIMARY KEY (\`version\`, \`runtimeEnv\`)
 );`)
 })
