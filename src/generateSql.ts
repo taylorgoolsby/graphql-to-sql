@@ -1,9 +1,4 @@
-import * as fs from 'fs-extra'
-import {
-  IExecutableSchemaDefinition,
-  SchemaDirectiveVisitor,
-  makeExecutableSchema,
-} from 'graphql-tools'
+import { DirectiveAnnotation } from '@graphql-tools/utils'
 
 const STRING_TYPES = [
   'CHAR',
@@ -16,26 +11,44 @@ const STRING_TYPES = [
   'SET',
 ]
 
-export interface IMakeSqlSchemaInput extends IExecutableSchemaDefinition {
-  schemaDirectives: {
-    [name: string]: typeof SchemaDirectiveVisitor
-  }
-  outputFilepath?: string
-  schemaName: string
-  tablePrefix?: string
+export interface IGenerateSqlOptions {
+  databaseName: string // E.G. CREATE SCHEMA IF NOT EXISTS ${databaseName};
+  tablePrefix?: string // E.G. SELECT FROM ${databaseName}.${tablePrefix}_User
   dbType?: 'mysql' | 'postgres'
 }
 
-export interface ITable {
-  name: string
-  columns: { [name: string]: IColumn }
-  primaryIndices?: IColumn[]
-  secondaryIndices?: IColumn[]
-  unicode?: boolean
-  constraints?: string
+export type Annotations = {
+  typeAnnotations: TypeAnnotations
+  fieldAnnotations: FieldAnnotations
 }
 
-export interface IColumn {
+export type TypeAnnotations = {
+  [typeName: string]: DirectiveAnnotation
+}
+
+export type FieldAnnotations = {
+  [typeName: string]: {
+    [fieldName: string]: {
+      directive: DirectiveAnnotation
+      graphQLType: string
+    }
+  }
+}
+
+type SqlAst = {
+  [name: string]: Table
+}
+
+type Table = {
+  name: string
+  columns: { [name: string]: Column }
+  unicode?: boolean
+  constraints?: string
+  primaryIndices?: Column[] // attached by ast conversion
+  secondaryIndices?: Column[] // attached by ast conversion
+}
+
+type Column = {
   name: string
   auto?: boolean
   default?: string
@@ -49,47 +62,73 @@ export interface IColumn {
   generated?: string
 }
 
-export interface ISQLAST {
-  [name: string]: ITable
-}
-
-let sqlAST: ISQLAST = {}
-
-export function addTable(table: ITable): void {
-  sqlAST[table.name] = table
-}
-export function addColumn(tableName: string, column: IColumn): void {
-  sqlAST[tableName] = {
-    ...sqlAST[tableName],
-    name: tableName,
-    columns: {
-      ...(sqlAST[tableName] || {}).columns,
-      [column.name]: column,
-    },
-  }
-}
-
-export function makeSqlSchema(options: IMakeSqlSchemaInput): string {
-  sqlAST = {}
-  const outputFilepath = options.outputFilepath
-  const databaseName = options.schemaName
-  const tablePrefix = options.tablePrefix || ''
-  delete options.outputFilepath
-  delete options.schemaName
-  makeExecutableSchema(options)
-  setDefaults()
-  gatherIndices()
+export function generateSql(
+  annotations: Annotations,
+  options: IGenerateSqlOptions
+): string {
+  const ast = convertIntoSqlAst(annotations, options)
   return renderCreateSchemaScript(
+    ast,
     options.dbType || 'mysql',
-    databaseName,
-    tablePrefix,
-    outputFilepath
+    options.databaseName
   )
 }
 
-function setDefaults() {
-  forEachTableDo(table => {
-    forEachColumnDo(table, column => {
+function convertIntoSqlAst(
+  annotations: Annotations,
+  options: IGenerateSqlOptions
+) {
+  const ast: SqlAst = {}
+
+  let tablePrefix = ''
+  if (options.tablePrefix) {
+    tablePrefix = options.tablePrefix
+  }
+  if (!tablePrefix.endsWith('_')) {
+    tablePrefix += '_'
+  }
+
+  for (const typeName of Object.keys(annotations.typeAnnotations)) {
+    const directive = annotations.typeAnnotations[typeName]
+    const table: Table = {
+      name: `${tablePrefix}${typeName}`,
+      columns: {},
+      ...directive.args,
+    }
+    ast[typeName] = table
+  }
+
+  for (const typeName of Object.keys(annotations.fieldAnnotations)) {
+    const fieldAnnotations = annotations.fieldAnnotations[typeName]
+
+    if (!ast[typeName]) {
+      const table: Table = {
+        name: `${tablePrefix}${typeName}`,
+        columns: {},
+      }
+      ast[typeName] = table
+    }
+
+    for (const fieldName of Object.keys(fieldAnnotations)) {
+      const directive = fieldAnnotations[fieldName].directive
+      const column: Column = {
+        name: fieldName,
+        graphQLType: fieldAnnotations[fieldName].graphQLType,
+        ...directive.args,
+      }
+      ast[typeName].columns[fieldName] = column
+    }
+  }
+
+  setDefaults(ast)
+  gatherIndices(ast)
+
+  return ast
+}
+
+function setDefaults(ast: SqlAst): void {
+  for (const table of Object.values(ast)) {
+    for (const column of Object.values(table.columns)) {
       if (column.primary && column.nullable) {
         emitError(
           table.name,
@@ -189,13 +228,13 @@ function setDefaults() {
       ) {
         column.generated = `AS ${column.generated}`
       }
-    })
-  })
+    }
+  }
 }
 
-function gatherIndices() {
-  forEachTableDo(table => {
-    forEachColumnDo(table, column => {
+function gatherIndices(ast: SqlAst): void {
+  for (const table of Object.values(ast)) {
+    for (const column of Object.values(table.columns)) {
       if (column.primary) {
         table.primaryIndices = table.primaryIndices || []
         table.primaryIndices.push(column)
@@ -203,7 +242,7 @@ function gatherIndices() {
         table.secondaryIndices = table.secondaryIndices || []
         table.secondaryIndices.push(column)
       }
-    })
+    }
     if (!table.primaryIndices || table.primaryIndices?.length === 0) {
       emitError(
         table.name,
@@ -211,21 +250,19 @@ function gatherIndices() {
         `Table ${table.name} does not have a primary index.`
       )
     }
-  })
+  }
 }
 
 function renderCreateSchemaScript(
+  ast: SqlAst,
   dbType: string,
-  databaseName: string,
-  tablePrefix: string,
-  outputFilepath?: string
+  databaseName: string
 ): string {
-  // console.log('Creating script from:', JSON.stringify(sqlAST, null, '  '))
-
   const tableDefinitions: string[] = []
-  forEachTableDo(table => {
+
+  for (const table of Object.values(ast)) {
     const columnDefinitions: string[] = []
-    forEachColumnDo(table, column => {
+    for (const column of Object.values(table.columns)) {
       const unicodeClause = !!column.unicode
         ? 'CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci '
         : ''
@@ -238,21 +275,22 @@ function renderCreateSchemaScript(
       columnDefinitions.push(
         `\`${column.name}\` ${column.type} ${unicodeClause}${generatedClause}${nullClause}${defaultClause}${autoClause}${uniqueClause}`.trim()
       )
-    })
+    }
 
-    // const primaryKeyNames = (table.primaryIndices && table.primaryIndices[0].name) || ''
-    const primaryKeyNames = table.primaryIndices && table.primaryIndices.length ?
-      table.primaryIndices.map(column => `\`${column.name}\``).join(', ') : ''
+    const primaryKeyNames =
+      table.primaryIndices && table.primaryIndices.length
+        ? table.primaryIndices.map((column) => `\`${column.name}\``).join(', ')
+        : ''
 
     let indexDefinitions =
       dbType === 'mysql'
-        ? (table.secondaryIndices || []).map(column => {
+        ? (table.secondaryIndices || []).map((column) => {
             return `INDEX \`${column.name.toUpperCase()}INDEX\` (\`${
               column.name
             }\` ASC)`
           })
-        : (table.secondaryIndices || []).map(column => {
-            return `CREATE INDEX \`${column.name.toUpperCase()}INDEX\` ON \`${databaseName}\`.\`${tablePrefix}${
+        : (table.secondaryIndices || []).map((column) => {
+            return `CREATE INDEX \`${column.name.toUpperCase()}INDEX\` ON \`${databaseName}\`.\`${
               table.name
             }\` (\`${column.name}\` ASC)`
           })
@@ -261,8 +299,6 @@ function renderCreateSchemaScript(
     }
 
     const constraints = table.constraints ? ',\n  ' + table.constraints : ''
-    // let constraints = (table.constraints || '').split(/,\s*/).join(',\n  ')
-    // constraints = constraints ? ',\n  ' + constraints : ''
 
     const unicodeModifier = table.unicode
       ? ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
@@ -270,7 +306,7 @@ function renderCreateSchemaScript(
 
     if (dbType === 'mysql') {
       tableDefinitions.push(
-        `CREATE TABLE \`${databaseName}\`.\`${tablePrefix}${table.name}\` (
+        `CREATE TABLE \`${databaseName}\`.\`${table.name}\` (
   ${columnDefinitions.join(',\n  ')},
   PRIMARY KEY (${primaryKeyNames})${indexDefinitions.join(
           ',\n  '
@@ -279,40 +315,23 @@ function renderCreateSchemaScript(
       )
     } else if (dbType === 'postgres') {
       tableDefinitions.push(
-        `CREATE TABLE \`${databaseName}\`.\`${tablePrefix}${table.name}\` (
+        `CREATE TABLE \`${databaseName}\`.\`${table.name}\` (
   ${columnDefinitions.join(',\n  ')},
   PRIMARY KEY (${primaryKeyNames})${constraints}
 )${indexDefinitions.join(';\n')};`
       )
     }
-  })
+  }
 
-  let render = `CREATE SCHEMA IF NOT EXISTS ${databaseName};\n\n` + tableDefinitions.join('\n\n')
+  let render =
+    `CREATE SCHEMA IF NOT EXISTS ${databaseName};\n\n` +
+    tableDefinitions.join('\n\n')
 
   if (dbType === 'postgres') {
     render = render.replace(/`/g, '')
   }
 
-  if (outputFilepath) {
-    fs.outputFileSync(outputFilepath, render)
-  }
   return render
-}
-
-function forEachTableDo(foo: (table: ITable) => void): void {
-  for (const tableName in sqlAST) {
-    if (!sqlAST.hasOwnProperty(tableName)) continue
-    const table: ITable = sqlAST[tableName]
-    foo(table)
-  }
-}
-
-function forEachColumnDo(table: ITable, foo: (column: IColumn) => void): void {
-  for (const columnName in table.columns) {
-    if (!table.columns.hasOwnProperty(columnName)) continue
-    const column: IColumn = table.columns[columnName]
-    foo(column)
-  }
 }
 
 function emitError(

@@ -1,26 +1,14 @@
-import * as fs from 'fs'
-import gql from 'graphql-tag'
-import {
-  makeSqlSchema,
-  getSchemaDirectives,
-  sqlDirectiveDeclaration,
-} from '../src'
+import test from 'boxtape'
+import {makeExecutableSchema} from '@graphql-tools/schema'
+import sqlDirective from '../lib/index.js'
 
-test('main test', () => {
-  const typeDefs = gql`
-    directive @sql(
-      unicode: Boolean
-      constraints: String
-      auto: Boolean
-      default: String
-      index: Boolean
-      nullable: Boolean
-      primary: Boolean
-      type: String
-      unique: Boolean
-      generated: String
-    ) on OBJECT | FIELD_DEFINITION
+const {
+  sqlDirectiveTypeDefs,
+  generateSql,
+} = sqlDirective('sql')
 
+test('postgres: main test', (t) => {
+  const typeDefs = `
     # See graphql-directive-private
     directive @private on OBJECT | FIELD_DEFINITION
 
@@ -50,21 +38,7 @@ test('main test', () => {
       childUserId: String @sql(type: "BINARY(16)", index: true)
     }
   `
-
-  const outputFilepath = '__tests__/testOutput.sql'
-  const directives = getSchemaDirectives()
-  makeSqlSchema({
-    typeDefs,
-    schemaDirectives: directives,
-    outputFilepath,
-    schemaName: 'public',
-    tablePrefix: 'test_',
-    dbType: 'postgres',
-  })
-
-  const testOutput = fs.readFileSync(outputFilepath, { encoding: 'utf8' })
-  expect(testOutput).toEqual(
-    `CREATE SCHEMA IF NOT EXISTS public;
+  const expected = `CREATE SCHEMA IF NOT EXISTS public;
 
 CREATE TABLE public.test_User (
   userId BINARY(16) NOT NULL,
@@ -72,16 +46,6 @@ CREATE TABLE public.test_User (
   databaseOnlyField INT NOT NULL,
   PRIMARY KEY (userId)
 );
-
-CREATE TABLE public.test_Post (
-  postId INT NOT NULL AUTO_INCREMENT,
-  userId BINARY(16) NOT NULL,
-  content VARCHAR(300) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
-  likes INT NOT NULL,
-  dateCreated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (postId)
-);
-CREATE INDEX USERIDINDEX ON public.test_Post (userId ASC);
 
 CREATE TABLE public.test_UserPair (
   userPairId BINARY(16) NOT NULL,
@@ -92,35 +56,33 @@ CREATE TABLE public.test_UserPair (
   FOREIGN KEY (parentUserId) REFERENCES User(userId)
 );
 CREATE INDEX PARENTUSERIDINDEX ON public.test_UserPair (parentUserId ASC);
-CREATE INDEX CHILDUSERIDINDEX ON public.test_UserPair (childUserId ASC);`
-  )
+CREATE INDEX CHILDUSERIDINDEX ON public.test_UserPair (childUserId ASC);
+
+CREATE TABLE public.test_Post (
+  postId INT NOT NULL AUTO_INCREMENT,
+  userId BINARY(16) NOT NULL,
+  content VARCHAR(300) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
+  likes INT NOT NULL,
+  dateCreated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (postId)
+);
+CREATE INDEX USERIDINDEX ON public.test_Post (userId ASC);`
+  runTest(t, typeDefs, expected)
 })
 
-test('error no primary index', () => {
+test('postgres: error no primary index', (t) => {
   const typeDefs = `
-    ${sqlDirectiveDeclaration}
-  
     type User @sql(unicode: true) {
       userId: String @sql(type: "BINARY(16)")
     }
   `
-
-  const directives = getSchemaDirectives()
-  expect(() => {
-    makeSqlSchema({
-      typeDefs,
-      schemaDirectives: directives,
-      outputFilepath: '',
-      schemaName: 'public',
-      dbType: 'postgres',
-    })
-  }).toThrow()
+  t.throws(() => {
+    runTest(t, typeDefs, '')
+  }, /does not have a primary index/, 'throw on missing primary index')
 })
 
-test('generated', () => {
-  const typeDefs = gql`
-    ${sqlDirectiveDeclaration}
-
+test('postgres: generated', (t) => {
+  const typeDefs = `
     scalar JSON
 
     type GeneratedTest {
@@ -138,20 +100,7 @@ test('generated', () => {
         @sql(type: "VARCHAR(30)", generated: "(data->>'$.test')", index: true)
     }
   `
-
-  const outputFilepath = '__tests__/testOutput.sql'
-  const directives = getSchemaDirectives()
-  makeSqlSchema({
-    typeDefs,
-    schemaDirectives: directives,
-    outputFilepath,
-    schemaName: 'public',
-    tablePrefix: 'test_',
-    dbType: 'postgres',
-  })
-
-  const testOutput = fs.readFileSync(outputFilepath, { encoding: 'utf8' })
-  expect(testOutput).toEqual(`CREATE SCHEMA IF NOT EXISTS public;
+  const expected = `CREATE SCHEMA IF NOT EXISTS public;
 
 CREATE TABLE public.test_GeneratedTest (
   userId BINARY(16) NOT NULL,
@@ -162,5 +111,23 @@ CREATE TABLE public.test_GeneratedTest (
   test4 VARCHAR(30) AS (data->>'$.test') NOT NULL,
   PRIMARY KEY (userId)
 );
-CREATE INDEX TEST4INDEX ON public.test_GeneratedTest (test4 ASC);`)
+CREATE INDEX TEST4INDEX ON public.test_GeneratedTest (test4 ASC);`
+  runTest(t, typeDefs, expected)
 })
+
+function runTest(t, typeDefs, expected) {
+  let schema = makeExecutableSchema({
+    typeDefs: [sqlDirectiveTypeDefs, typeDefs],
+  })
+  const answer = generateSql(schema, {
+    databaseName: 'public',
+    tablePrefix: 'test',
+    dbType: 'postgres'
+  })
+
+  if (answer !== expected) {
+    console.log(answer)
+  }
+
+  t.equal(answer, expected)
+}
