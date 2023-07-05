@@ -7,11 +7,12 @@ Unify your SQL schema and your GraphQL schema. Manage schema from a single sourc
 `node generate-sql.js`
 ```js
 // generate-sql.js
-const gql = require('graphql-tag')
+import sqlDirective from 'graphql-to-sql'
+
 const {
-  makeSqlSchema,
-  getSchemaDirectives
-} = require('graphql-to-sql')
+  sqlDirectiveTypeDefs,
+  generateSql
+} = sqlDirective('sql')
 
 const typeDefs = gql`
   directive @sql (
@@ -53,15 +54,10 @@ const typeDefs = gql`
   }
 `
 
-const outputFilepath = 'schemaScript.sql'
-const directives = getSchemaDirectives()
-const out = makeSqlSchema({
-  typeDefs,
-  schemaDirectives: directives,
-  outputFilepath, // if specified, writes to file.
-  schemaName: 'public', // for postgres, keeping public is recommended.
-  tablePrefix: 'test_',
-  dbType: 'postgres' // 'mysql'
+const sql = generateSql({typeDefs: [typeDefs, sqlDirectiveTypeDefs]}, {
+  databaseName: 'public', // for postgres, keeping public is recommended.
+  tablePrefix: 'test', // or test_
+  dbType: 'mysql' // or postgres
 })
 ```
 The script above will produce this file:
