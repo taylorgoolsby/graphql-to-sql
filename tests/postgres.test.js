@@ -119,7 +119,7 @@ function runTest(t, typeDefs, expected) {
   let schema = makeExecutableSchema({
     typeDefs: [sqlDirectiveTypeDefs, typeDefs],
   })
-  const answer = generateSql(schema, {
+  const answer = generateSql({schema}, {
     databaseName: 'public',
     tablePrefix: 'test',
     dbType: 'postgres'

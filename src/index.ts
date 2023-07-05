@@ -1,4 +1,9 @@
-import { mapSchema, MapperKind, getDirectives } from '@graphql-tools/utils'
+import {
+  mapSchema,
+  MapperKind,
+  getDirectives,
+  TypeSource,
+} from '@graphql-tools/utils'
 import { GraphQLSchema } from 'graphql'
 import {
   Annotations,
@@ -7,6 +12,7 @@ import {
   IGenerateSqlOptions,
   TypeAnnotations,
 } from './generateSql.js'
+import { makeExecutableSchema } from '@graphql-tools/schema'
 
 export function customDirectiveDeclaration(
   customDirectiveName: string
@@ -67,9 +73,25 @@ export default function sqlDirective(directiveName: string = 'sql') {
   return {
     sqlDirectiveTypeDefs: customDirectiveDeclaration(directiveName),
     generateSql: (
-      schema: GraphQLSchema,
+      input: {
+        schema?: GraphQLSchema
+        typeDefs?: TypeSource
+      },
       options: IGenerateSqlOptions
     ): string => {
+      let schema
+      if (input.schema) {
+        schema = input.schema
+      } else if (input.typeDefs) {
+        schema = makeExecutableSchema({
+          typeDefs: input.typeDefs,
+        })
+      } else {
+        throw new Error(
+          'Either schema or typeDefs should be specified as input.'
+        )
+      }
+
       const annotations = visit(schema)
       return generateSql(annotations, options)
     },
