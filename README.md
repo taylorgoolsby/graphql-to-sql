@@ -60,9 +60,10 @@ const sql = generateSql({typeDefs: [typeDefs, sqlDirectiveTypeDefs]}, {
   dbType: 'mysql' // or postgres
 })
 ```
-The script above will produce this file:
+The script above will produce this string:
 ```sql
--- schemaScript.sql
+CREATE SCHEMA IF NOT EXISTS public;
+
 CREATE TABLE `public`.`test_User` (
   `userId` BINARY(16) NOT NULL,
   `uniqueColumn` INT NOT NULL UNIQUE,
