@@ -8,6 +8,7 @@ Unify your SQL schema and your GraphQL schema. Manage schema from a single sourc
 ```js
 // generate-sql.js
 import sqlDirective from 'graphql-to-sql'
+import gql from 'graphql-tag'
 
 const {
   sqlDirectiveTypeDefs,
@@ -17,14 +18,16 @@ const {
 const typeDefs = gql`
   directive @sql (
     unicode: Boolean
-    constraints: String
     auto: Boolean
     default: String
+    hide: Boolean
     index: Boolean
     nullable: Boolean
     primary: Boolean
     type: String
     unique: Boolean
+    generated: String
+    constraints: String
   ) on OBJECT | FIELD_DEFINITION
 
   # See graphql-directive-private
@@ -59,26 +62,17 @@ const sql = generateSql({typeDefs: [typeDefs, sqlDirectiveTypeDefs]}, {
   tablePrefix: 'test', // or test_
   dbType: 'mysql' // or postgres
 })
+console.log('sql', sql)
 ```
-The script above will produce this string:
-```sql
-CREATE SCHEMA IF NOT EXISTS public;
 
+The script above will produce this string:
+
+```sql
 CREATE TABLE `public`.`test_User` (
   `userId` BINARY(16) NOT NULL,
   `uniqueColumn` INT NOT NULL UNIQUE,
   `databaseOnlyField` INT NOT NULL,
   PRIMARY KEY (`userId`)
-) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-CREATE TABLE `public`.`test_Post` (
-  `postId` INT NOT NULL AUTO_INCREMENT,
-  `userId` BINARY(16) NOT NULL,
-  `content` VARCHAR(300) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
-  `likes` INT NOT NULL,
-  `dateCreated` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`postId`),
-  INDEX `USERIDINDEX` (`userId` ASC)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE `public`.`test_UserPair` (
@@ -91,6 +85,16 @@ CREATE TABLE `public`.`test_UserPair` (
   UNIQUE(parentUserId, childUserId),
   FOREIGN KEY (parentUserId) REFERENCES User(userId)
 );
+
+CREATE TABLE `public`.`test_Post` (
+  `postId` INT NOT NULL AUTO_INCREMENT,
+  `userId` BINARY(16) NOT NULL,
+  `content` VARCHAR(300) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
+  `likes` INT NOT NULL,
+  `dateCreated` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`postId`),
+  INDEX `USERIDINDEX` (`userId` ASC)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
 Also see [main-test.ts](__tests__/main-test.ts) for a working example.
