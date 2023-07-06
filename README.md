@@ -20,7 +20,6 @@ const typeDefs = gql`
     unicode: Boolean
     auto: Boolean
     default: String
-    hide: Boolean
     index: Boolean
     nullable: Boolean
     primary: Boolean
