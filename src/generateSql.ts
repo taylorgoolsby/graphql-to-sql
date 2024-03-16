@@ -317,7 +317,7 @@ function renderCreateSchemaScript(
         : (table.secondaryIndices || []).map((column) => {
             return `CREATE INDEX \`${column.name.toUpperCase()}INDEX\` ON ${dbPart}\`${
               table.name
-            }\` (\`${column.name}\` ASC)${isSqlite ? ';' : ''}`
+            }\` (\`${column.name}\` ASC)`
           })
     if (indexDefinitions.length > 0) {
       indexDefinitions = [''].concat(indexDefinitions)
@@ -330,14 +330,16 @@ function renderCreateSchemaScript(
         ? ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
         : ''
 
-    if (dbType === 'mysql' || dbType === 'sqlite') {
+    if (dbType === 'mysql') {
       tableDefinitions.push(
         `CREATE TABLE ${dbPart}\`${table.name}\` (
   ${columnDefinitions.join(',\n  ')},
-  PRIMARY KEY (${primaryKeyNames})${constraints}
-)${unicodeModifier};\n${indexDefinitions.join('\n')}`
+  PRIMARY KEY (${primaryKeyNames})${indexDefinitions.join(
+          ',\n  '
+        )}${constraints}
+)${unicodeModifier};`
       )
-    } else if (dbType === 'postgres') {
+    } else if (dbType === 'postgres' || dbType === 'sqlite') {
       tableDefinitions.push(
         `CREATE TABLE ${dbPart}\`${table.name}\` (
   ${columnDefinitions.join(',\n  ')},
