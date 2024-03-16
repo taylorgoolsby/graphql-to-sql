@@ -128,7 +128,6 @@ function convertIntoSqlAst(
 
 function setDefaults(ast: SqlAst, options: IGenerateSqlOptions): void {
   const isSqlite = options.dbType === 'sqlite'
-  const jsonClause = isSqlite ? 'BLOB' : 'JSON'
 
   for (const table of Object.values(ast)) {
     for (const column of Object.values(table.columns)) {
@@ -154,7 +153,7 @@ function setDefaults(ast: SqlAst, options: IGenerateSqlOptions): void {
         } else if (column.graphQLType === 'Boolean') {
           column.type = 'BOOLEAN'
         } else if (column.graphQLType === 'JSON') {
-          column.type = jsonClause
+          column.type = 'JSON'
         } else {
           emitError(
             table.name,
@@ -165,8 +164,12 @@ function setDefaults(ast: SqlAst, options: IGenerateSqlOptions): void {
       }
 
       column.type = (column.type || '').toUpperCase()
-      if (isSqlite && column.type === 'JSON') {
-        column.type = 'BLOB'
+      if (isSqlite) {
+        if (column.type === 'JSON') {
+          column.type = 'BLOB'
+        } else if (column.type === 'INT') {
+          column.type = 'INTEGER'
+        }
       }
 
       if (column.auto) {
