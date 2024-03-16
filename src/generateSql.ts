@@ -14,7 +14,7 @@ const STRING_TYPES = [
 export interface IGenerateSqlOptions {
   databaseName: string // E.G. CREATE SCHEMA IF NOT EXISTS ${databaseName};
   tablePrefix?: string // E.G. SELECT FROM ${databaseName}.${tablePrefix}_User
-  dbType?: 'mysql' | 'postgres'
+  dbType?: 'mysql' | 'postgres' | 'sqlite'
 }
 
 export type Annotations = {
@@ -258,24 +258,35 @@ function renderCreateSchemaScript(
   dbType: string,
   databaseName: string | null | undefined
 ): string {
+  const isSqlite = dbType === 'sqlite'
+
+  if (isSqlite) {
+    databaseName = null
+  }
+
   let dbPart = ''
   if (databaseName) {
     dbPart = `\`${databaseName}\`.`
   }
+
+  const autoIncrementClause = isSqlite ? 'AUTOINCREMENT' : 'AUTO_INCREMENT'
 
   const tableDefinitions: string[] = []
 
   for (const table of Object.values(ast)) {
     const columnDefinitions: string[] = []
     for (const column of Object.values(table.columns)) {
-      const unicodeClause = !!column.unicode
-        ? 'CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci '
-        : ''
+      const unicodeClause =
+        !!column.unicode && !isSqlite
+          ? 'CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci '
+          : ''
       const generatedClause = !!column.generated ? `${column.generated} ` : ''
       const nullClause = !!column.nullable ? 'NULL ' : 'NOT NULL '
       const defaultClause = !!column.default ? `DEFAULT ${column.default} ` : ''
       const autoClause =
-        !!column.auto && column.type !== 'SERIAL' ? 'AUTO_INCREMENT ' : ''
+        !!column.auto && column.type !== 'SERIAL'
+          ? autoIncrementClause + ' '
+          : ''
       const uniqueClause = !!column.unique ? `UNIQUE ` : ''
       columnDefinitions.push(
         `\`${column.name}\` ${column.type} ${unicodeClause}${generatedClause}${nullClause}${defaultClause}${autoClause}${uniqueClause}`.trim()
@@ -305,11 +316,12 @@ function renderCreateSchemaScript(
 
     const constraints = table.constraints ? ',\n  ' + table.constraints : ''
 
-    const unicodeModifier = table.unicode
-      ? ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
-      : ''
+    const unicodeModifier =
+      table.unicode && !isSqlite
+        ? ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
+        : ''
 
-    if (dbType === 'mysql') {
+    if (dbType === 'mysql' || dbType === 'sqlite') {
       tableDefinitions.push(
         `CREATE TABLE ${dbPart}\`${table.name}\` (
   ${columnDefinitions.join(',\n  ')},
