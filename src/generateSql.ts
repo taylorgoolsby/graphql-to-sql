@@ -256,8 +256,13 @@ function gatherIndices(ast: SqlAst): void {
 function renderCreateSchemaScript(
   ast: SqlAst,
   dbType: string,
-  databaseName: string
+  databaseName: string | null | undefined
 ): string {
+  let dbPart = ''
+  if (databaseName) {
+    dbPart = `\`${databaseName}\`.`
+  }
+
   const tableDefinitions: string[] = []
 
   for (const table of Object.values(ast)) {
@@ -290,7 +295,7 @@ function renderCreateSchemaScript(
             }\` ASC)`
           })
         : (table.secondaryIndices || []).map((column) => {
-            return `CREATE INDEX \`${column.name.toUpperCase()}INDEX\` ON \`${databaseName}\`.\`${
+            return `CREATE INDEX \`${column.name.toUpperCase()}INDEX\` ON ${dbPart}\`${
               table.name
             }\` (\`${column.name}\` ASC)`
           })
@@ -306,7 +311,7 @@ function renderCreateSchemaScript(
 
     if (dbType === 'mysql') {
       tableDefinitions.push(
-        `CREATE TABLE \`${databaseName}\`.\`${table.name}\` (
+        `CREATE TABLE ${dbPart}\`${table.name}\` (
   ${columnDefinitions.join(',\n  ')},
   PRIMARY KEY (${primaryKeyNames})${indexDefinitions.join(
           ',\n  '
@@ -315,7 +320,7 @@ function renderCreateSchemaScript(
       )
     } else if (dbType === 'postgres') {
       tableDefinitions.push(
-        `CREATE TABLE \`${databaseName}\`.\`${table.name}\` (
+        `CREATE TABLE ${dbPart}\`${table.name}\` (
   ${columnDefinitions.join(',\n  ')},
   PRIMARY KEY (${primaryKeyNames})${constraints}
 )${indexDefinitions.join(';\n')};`
@@ -323,9 +328,10 @@ function renderCreateSchemaScript(
     }
   }
 
-  let render =
-    `CREATE SCHEMA IF NOT EXISTS ${databaseName};\n\n` +
-    tableDefinitions.join('\n\n')
+  let render = databaseName
+    ? `CREATE SCHEMA IF NOT EXISTS ${databaseName};\n\n` +
+      tableDefinitions.join('\n\n')
+    : tableDefinitions.join('\n\n')
 
   if (dbType === 'postgres') {
     render = render.replace(/`/g, '')
