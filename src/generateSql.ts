@@ -332,7 +332,7 @@ function renderCreateSchemaScript(
 
     if (dbType === 'mysql') {
       tableDefinitions.push(
-        `CREATE TABLE ${dbPart}\`${table.name}\` (
+        `CREATE TABLE IF NOT EXISTS ${dbPart}\`${table.name}\` (
   ${columnDefinitions.join(',\n  ')},
   PRIMARY KEY (${primaryKeyNames})${indexDefinitions.join(
           ',\n  '
@@ -341,7 +341,7 @@ function renderCreateSchemaScript(
       )
     } else if (dbType === 'postgres' || dbType === 'sqlite') {
       tableDefinitions.push(
-        `CREATE TABLE ${dbPart}\`${table.name}\` (
+        `CREATE TABLE IF NOT EXISTS ${dbPart}\`${table.name}\` (
   ${columnDefinitions.join(',\n  ')},
   PRIMARY KEY (${primaryKeyNames})${constraints}
 )${indexDefinitions.join(';\n')};`
