@@ -165,6 +165,9 @@ function setDefaults(ast: SqlAst, options: IGenerateSqlOptions): void {
       }
 
       column.type = (column.type || '').toUpperCase()
+      if (isSqlite && column.type === 'JSON') {
+        column.type = 'BLOB'
+      }
 
       if (column.auto) {
         // @ts-ignore
