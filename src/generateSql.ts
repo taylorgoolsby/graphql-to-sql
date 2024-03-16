@@ -120,13 +120,16 @@ function convertIntoSqlAst(
     }
   }
 
-  setDefaults(ast)
+  setDefaults(ast, options)
   gatherIndices(ast)
 
   return ast
 }
 
-function setDefaults(ast: SqlAst): void {
+function setDefaults(ast: SqlAst, options: IGenerateSqlOptions): void {
+  const isSqlite = options.dbType === 'sqlite'
+  const jsonClause = isSqlite ? 'BLOB' : 'JSON'
+
   for (const table of Object.values(ast)) {
     for (const column of Object.values(table.columns)) {
       if (column.primary && column.nullable) {
@@ -151,7 +154,7 @@ function setDefaults(ast: SqlAst): void {
         } else if (column.graphQLType === 'Boolean') {
           column.type = 'BOOLEAN'
         } else if (column.graphQLType === 'JSON') {
-          column.type = 'JSON'
+          column.type = jsonClause
         } else {
           emitError(
             table.name,
