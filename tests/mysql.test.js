@@ -40,14 +40,14 @@ test('main test', (t) => {
   `
   const expected = `CREATE SCHEMA IF NOT EXISTS public;
 
-CREATE TABLE \`public\`.\`test_User\` (
+CREATE TABLE IF NOT EXISTS \`public\`.\`test_User\` (
   \`userId\` BINARY(16) NOT NULL,
   \`uniqueColumn\` INT NOT NULL UNIQUE,
   \`databaseOnlyField\` INT NOT NULL,
   PRIMARY KEY (\`userId\`)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE \`public\`.\`test_UserPair\` (
+CREATE TABLE IF NOT EXISTS \`public\`.\`test_UserPair\` (
   \`userPairId\` BINARY(16) NOT NULL,
   \`parentUserId\` BINARY(16) NOT NULL,
   \`childUserId\` BINARY(16) NOT NULL,
@@ -58,7 +58,7 @@ CREATE TABLE \`public\`.\`test_UserPair\` (
   FOREIGN KEY (parentUserId) REFERENCES User(userId)
 );
 
-CREATE TABLE \`public\`.\`test_Post\` (
+CREATE TABLE IF NOT EXISTS \`public\`.\`test_Post\` (
   \`postId\` INT NOT NULL AUTO_INCREMENT,
   \`userId\` BINARY(16) NOT NULL,
   \`content\` VARCHAR(300) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
@@ -102,7 +102,7 @@ test('mysql: generated', (t) => {
   `
   const expected = `CREATE SCHEMA IF NOT EXISTS public;
 
-CREATE TABLE \`public\`.\`test_GeneratedTest\` (
+CREATE TABLE IF NOT EXISTS \`public\`.\`test_GeneratedTest\` (
   \`userId\` BINARY(16) NOT NULL,
   \`data\` JSON NOT NULL,
   \`test1\` VARCHAR(30) GENERATED ALWAYS AS (data->>'$.test') VIRTUAL NOT NULL,
@@ -124,7 +124,7 @@ test('mysql: multi-column primary key', (t) => {
   `
   const expected = `CREATE SCHEMA IF NOT EXISTS public;
 
-CREATE TABLE \`public\`.\`test_Version\` (
+CREATE TABLE IF NOT EXISTS \`public\`.\`test_Version\` (
   \`version\` VARCHAR(100) NOT NULL,
   \`runtimeEnv\` VARCHAR(100) NOT NULL,
   PRIMARY KEY (\`version\`, \`runtimeEnv\`)

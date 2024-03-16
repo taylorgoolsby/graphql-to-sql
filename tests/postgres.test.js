@@ -40,14 +40,14 @@ test('postgres: main test', (t) => {
   `
   const expected = `CREATE SCHEMA IF NOT EXISTS public;
 
-CREATE TABLE public.test_User (
+CREATE TABLE IF NOT EXISTS public.test_User (
   userId BINARY(16) NOT NULL,
   uniqueColumn INT NOT NULL UNIQUE,
   databaseOnlyField INT NOT NULL,
   PRIMARY KEY (userId)
 );
 
-CREATE TABLE public.test_UserPair (
+CREATE TABLE IF NOT EXISTS public.test_UserPair (
   userPairId BINARY(16) NOT NULL,
   parentUserId BINARY(16) NOT NULL,
   childUserId BINARY(16) NOT NULL,
@@ -58,7 +58,7 @@ CREATE TABLE public.test_UserPair (
 CREATE INDEX PARENTUSERIDINDEX ON public.test_UserPair (parentUserId ASC);
 CREATE INDEX CHILDUSERIDINDEX ON public.test_UserPair (childUserId ASC);
 
-CREATE TABLE public.test_Post (
+CREATE TABLE IF NOT EXISTS public.test_Post (
   postId INT NOT NULL AUTO_INCREMENT,
   userId BINARY(16) NOT NULL,
   content VARCHAR(300) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
@@ -102,7 +102,7 @@ test('postgres: generated', (t) => {
   `
   const expected = `CREATE SCHEMA IF NOT EXISTS public;
 
-CREATE TABLE public.test_GeneratedTest (
+CREATE TABLE IF NOT EXISTS public.test_GeneratedTest (
   userId BINARY(16) NOT NULL,
   data JSON NOT NULL,
   test1 VARCHAR(30) GENERATED ALWAYS AS (data->>'$.test') VIRTUAL NOT NULL,

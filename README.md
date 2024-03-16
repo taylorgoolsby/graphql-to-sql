@@ -67,14 +67,14 @@ console.log('sql', sql)
 The script above will produce this string:
 
 ```sql
-CREATE TABLE `public`.`test_User` (
+CREATE TABLE IF NOT EXISTS `public`.`test_User` (
   `userId` BINARY(16) NOT NULL,
   `uniqueColumn` INT NOT NULL UNIQUE,
   `databaseOnlyField` INT NOT NULL,
   PRIMARY KEY (`userId`)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE `public`.`test_UserPair` (
+CREATE TABLE IF NOT EXISTS `public`.`test_UserPair` (
   `userPairId` BINARY(16) NOT NULL,
   `parentUserId` BINARY(16) NOT NULL,
   `childUserId` BINARY(16) NOT NULL,
@@ -85,7 +85,7 @@ CREATE TABLE `public`.`test_UserPair` (
   FOREIGN KEY (parentUserId) REFERENCES User(userId)
 );
 
-CREATE TABLE `public`.`test_Post` (
+CREATE TABLE IF NOT EXISTS `public`.`test_Post` (
   `postId` INT NOT NULL AUTO_INCREMENT,
   `userId` BINARY(16) NOT NULL,
   `content` VARCHAR(300) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,

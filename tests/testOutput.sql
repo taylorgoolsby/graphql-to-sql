@@ -1,6 +1,6 @@
 CREATE SCHEMA IF NOT EXISTS public;
 
-CREATE TABLE public.test_GeneratedTest (
+CREATE TABLE IF NOT EXISTS public.test_GeneratedTest (
   userId BINARY(16) NOT NULL,
   data JSON NOT NULL,
   test1 VARCHAR(30) GENERATED ALWAYS AS (data->>'$.test') VIRTUAL NOT NULL,
