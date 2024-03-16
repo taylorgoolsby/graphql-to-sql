@@ -84,7 +84,7 @@ function convertIntoSqlAst(
   if (options.tablePrefix) {
     tablePrefix = options.tablePrefix
   }
-  if (!tablePrefix.endsWith('_')) {
+  if (tablePrefix && !tablePrefix.endsWith('_')) {
     tablePrefix += '_'
   }
 
