@@ -317,7 +317,7 @@ function renderCreateSchemaScript(
         : (table.secondaryIndices || []).map((column) => {
             return `CREATE INDEX \`${column.name.toUpperCase()}INDEX\` ON ${dbPart}\`${
               table.name
-            }\` (\`${column.name}\` ASC)`
+            }\` (\`${column.name}\` ASC)${isSqlite ? ';' : ''}`
           })
     if (indexDefinitions.length > 0) {
       indexDefinitions = [''].concat(indexDefinitions)
@@ -334,10 +334,8 @@ function renderCreateSchemaScript(
       tableDefinitions.push(
         `CREATE TABLE ${dbPart}\`${table.name}\` (
   ${columnDefinitions.join(',\n  ')},
-  PRIMARY KEY (${primaryKeyNames})${indexDefinitions.join(
-          ',\n  '
-        )}${constraints}
-)${unicodeModifier};`
+  PRIMARY KEY (${primaryKeyNames})${constraints}
+)${unicodeModifier};\n${indexDefinitions.join('\n')}`
       )
     } else if (dbType === 'postgres') {
       tableDefinitions.push(
