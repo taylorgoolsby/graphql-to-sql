@@ -300,7 +300,7 @@ function renderCreateSchemaScript(
       const uniqueClause = !!column.unique ? `UNIQUE ` : ''
       if (isSqlite && column.auto) {
         columnDefinitions.push(
-          `\`${column.name}\` ${column.type} INTEGER PRIMARY KEY AUTOINCREMENT`.trim()
+          `\`${column.name}\` INTEGER PRIMARY KEY AUTOINCREMENT`.trim()
         )
         hasSqliteAutoIncrement = true
       } else {
