@@ -279,6 +279,7 @@ function renderCreateSchemaScript(
   }
 
   const autoIncrementClause = isSqlite ? 'AUTOINCREMENT' : 'AUTO_INCREMENT'
+  let hasSqliteAutoIncrement = false
 
   const tableDefinitions: string[] = []
 
@@ -297,9 +298,16 @@ function renderCreateSchemaScript(
           ? autoIncrementClause + ' '
           : ''
       const uniqueClause = !!column.unique ? `UNIQUE ` : ''
-      columnDefinitions.push(
-        `\`${column.name}\` ${column.type} ${unicodeClause}${generatedClause}${nullClause}${defaultClause}${autoClause}${uniqueClause}`.trim()
-      )
+      if (isSqlite && column.auto) {
+        columnDefinitions.push(
+          `\`${column.name}\` ${column.type} INTEGER PRIMARY KEY AUTOINCREMENT`.trim()
+        )
+        hasSqliteAutoIncrement = true
+      } else {
+        columnDefinitions.push(
+          `\`${column.name}\` ${column.type} ${unicodeClause}${generatedClause}${nullClause}${defaultClause}${autoClause}${uniqueClause}`.trim()
+        )
+      }
     }
 
     const primaryKeyNames =
@@ -340,12 +348,21 @@ function renderCreateSchemaScript(
 )${unicodeModifier};`
       )
     } else if (dbType === 'postgres' || dbType === 'sqlite') {
-      tableDefinitions.push(
-        `CREATE TABLE IF NOT EXISTS ${dbPart}\`${table.name}\` (
+      if (!hasSqliteAutoIncrement) {
+        tableDefinitions.push(
+          `CREATE TABLE IF NOT EXISTS ${dbPart}\`${table.name}\` (
   ${columnDefinitions.join(',\n  ')},
   PRIMARY KEY (${primaryKeyNames})${constraints}
 )${indexDefinitions.join(';\n')};`
-      )
+        )
+      } else {
+        tableDefinitions.push(
+          `CREATE TABLE IF NOT EXISTS ${dbPart}\`${table.name}\` (
+  ${columnDefinitions.join(',\n  ')},
+  ${constraints}
+)${indexDefinitions.join(';\n')};`
+        )
+      }
     }
   }
 
