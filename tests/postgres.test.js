@@ -55,8 +55,8 @@ CREATE TABLE IF NOT EXISTS public.test_UserPair (
   UNIQUE(parentUserId, childUserId),
   FOREIGN KEY (parentUserId) REFERENCES User(userId)
 );
-CREATE INDEX PARENTUSERIDINDEX ON public.test_UserPair (parentUserId ASC);
-CREATE INDEX CHILDUSERIDINDEX ON public.test_UserPair (childUserId ASC);
+CREATE INDEX IF NOT EXISTS PARENTUSERIDINDEX ON public.test_UserPair (parentUserId ASC);
+CREATE INDEX IF NOT EXISTS CHILDUSERIDINDEX ON public.test_UserPair (childUserId ASC);
 
 CREATE TABLE IF NOT EXISTS public.test_Post (
   postId INT NOT NULL AUTO_INCREMENT,
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS public.test_Post (
   dateCreated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (postId)
 );
-CREATE INDEX USERIDINDEX ON public.test_Post (userId ASC);`
+CREATE INDEX IF NOT EXISTS USERIDINDEX ON public.test_Post (userId ASC);`
   runTest(t, typeDefs, expected)
 })
 
@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS public.test_GeneratedTest (
   test4 VARCHAR(30) AS (data->>'$.test') NOT NULL,
   PRIMARY KEY (userId)
 );
-CREATE INDEX TEST4INDEX ON public.test_GeneratedTest (test4 ASC);`
+CREATE INDEX IF NOT EXISTS TEST4INDEX ON public.test_GeneratedTest (test4 ASC);`
   runTest(t, typeDefs, expected)
 })
 

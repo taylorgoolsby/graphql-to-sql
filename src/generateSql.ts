@@ -315,7 +315,7 @@ function renderCreateSchemaScript(
             }\` ASC)`
           })
         : (table.secondaryIndices || []).map((column) => {
-            return `CREATE INDEX \`${column.name.toUpperCase()}INDEX\` ON ${dbPart}\`${
+            return `CREATE INDEX IF NOT EXISTS \`${column.name.toUpperCase()}INDEX\` ON ${dbPart}\`${
               table.name
             }\` (\`${column.name}\` ASC)`
           })
