@@ -358,8 +358,7 @@ function renderCreateSchemaScript(
       } else {
         tableDefinitions.push(
           `CREATE TABLE IF NOT EXISTS ${dbPart}\`${table.name}\` (
-  ${columnDefinitions.join(',\n  ')},
-  ${constraints}
+  ${columnDefinitions.join(',\n  ')}${constraints}
 )${indexDefinitions.join(';\n')};`
         )
       }
