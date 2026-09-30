@@ -12,8 +12,8 @@ const STRING_TYPES = [
 ]
 
 export interface IGenerateSqlOptions {
-  databaseName: string // E.G. CREATE SCHEMA IF NOT EXISTS ${databaseName};
-  tablePrefix?: string // E.G. SELECT FROM ${databaseName}.${tablePrefix}_User
+  databaseName: string | null | undefined // E.G. CREATE SCHEMA IF NOT EXISTS ${databaseName};
+  tablePrefix?: string | null | undefined // E.G. SELECT FROM ${databaseName}.${tablePrefix}_User
   dbType?: 'mysql' | 'postgres' | 'sqlite'
 }
 
